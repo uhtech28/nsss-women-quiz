@@ -52,7 +52,7 @@ export default function HomePage() {
           <span className="text-3xl">🌸</span>
         </div>
 
-        <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight">
+        <h1 className="text-4xl md:text-4xl font-extrabold text-white leading-tight">
           International Day of Women and Girls
           <br /> in Science Quiz
         </h1>
