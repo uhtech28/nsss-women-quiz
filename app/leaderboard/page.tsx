@@ -3,36 +3,35 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
 
 type Participant = {
   id: string;
   name: string;
   roll: string;
   score: number;
-  timetaken: number;
+  timeTaken: number;
 };
 
 export default function LeaderboardPage() {
   const [list, setList] = useState<Participant[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     const q = query(
       collection(db, "participants"),
       orderBy("score", "desc"),
+      orderBy("timeTaken", "asc")
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data: Participant[] = snapshot.docs.map((doc) => {
-        const d = doc.data();
-        return {
-          id: doc.id,
-          name: d.name || "Anonymous",
-          roll: d.roll || "-",
-          score: d.score ?? 0,
-          timetaken: d.timetaken ?? 0, // ✅ FIXED
-        };
-      });
-
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        name: doc.data().name || "Anonymous",
+        roll: doc.data().roll || "-",
+        score: doc.data().score ?? 0,
+        timeTaken: doc.data().timeTaken ?? 0,
+      }));
       setList(data);
     });
 
@@ -42,15 +41,18 @@ export default function LeaderboardPage() {
   return (
     <main className="min-h-screen bg-[#0f0617] text-white flex items-center justify-center px-4">
       <div className="w-full max-w-3xl bg-white/10 backdrop-blur-xl p-8 rounded-3xl border border-white/20">
+
         <h1 className="text-3xl font-bold text-center mb-6">
           🏆 Live Leaderboard
         </h1>
 
-        {list.length === 0 && (
-          <p className="text-center text-purple-300">
-            No participants yet
-          </p>
-        )}
+        {/* ✅ RESULT BUTTON */}
+        <button
+          onClick={() => router.push("/result")}
+          className="mb-6 w-full py-3 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 font-semibold"
+        >
+          🎓 View My Result & Certificate
+        </button>
 
         <div className="space-y-3">
           {list.map((p, i) => (
@@ -81,7 +83,7 @@ export default function LeaderboardPage() {
                   {p.score}/10
                 </p>
                 <p className="text-xs text-purple-300">
-                  {p.timetaken}s
+                  {p.timeTaken}s
                 </p>
               </div>
             </div>
