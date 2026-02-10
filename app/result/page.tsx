@@ -6,15 +6,28 @@ import { db } from "@/lib/firebase";
 import jsPDF from "jspdf";
 
 export default function ResultPage() {
+  const [mounted, setMounted] = useState(false);
   const [rank, setRank] = useState<number | null>(null);
 
-  const name = localStorage.getItem("name") || "Participant";
-  const roll = localStorage.getItem("roll") || "-";
-  const score = Number(localStorage.getItem("quizScore") || 0);
-  const timeTaken = Number(localStorage.getItem("timeTaken") || 0);
+  const [name, setName] = useState("Participant");
+  const [roll, setRoll] = useState("-");
+  const [score, setScore] = useState(0);
+  const [timeTaken, setTimeTaken] = useState(0);
+
+  // ✅ SAFE localStorage access (CLIENT ONLY)
+  useEffect(() => {
+    setMounted(true);
+
+    setName(localStorage.getItem("name") || "Participant");
+    setRoll(localStorage.getItem("roll") || "-");
+    setScore(Number(localStorage.getItem("quizScore") || 0));
+    setTimeTaken(Number(localStorage.getItem("timeTaken") || 0));
+  }, []);
 
   // 🏅 Rank (optional, safe)
   useEffect(() => {
+    if (!mounted) return;
+
     const fetchRank = async () => {
       try {
         const q = query(
@@ -38,38 +51,32 @@ export default function ResultPage() {
     };
 
     fetchRank();
-  }, []);
+  }, [mounted, name, roll, score]);
 
-  // 🎓 CERTIFICATE GENERATOR
+  // 🎓 CERTIFICATE
   const generateCertificate = () => {
     const pdf = new jsPDF("landscape", "mm", "a4");
 
-    // 🟥 NSS LOGO (TOP LEFT)
     const img = new Image();
     img.src = "/nss-logo.jpg";
 
     img.onload = () => {
       pdf.addImage(img, "PNG", 20, 20, 35, 35);
 
-      pdf.setFont("helvetica", "bold");
       pdf.setFontSize(30);
       pdf.text("Certificate of Participation", 148, 45, { align: "center" });
 
       pdf.setFontSize(16);
-      pdf.setFont("helvetica", "normal");
       pdf.text("This certificate is proudly presented to", 148, 70, {
         align: "center",
       });
 
       pdf.setFontSize(26);
-      pdf.setFont("helvetica", "bold");
       pdf.text(name, 148, 95, { align: "center" });
 
       pdf.setFontSize(14);
-      pdf.setFont("helvetica", "normal");
       pdf.text(`Roll Number: ${roll}`, 148, 110, { align: "center" });
 
-      pdf.setFontSize(16);
       pdf.text(
         "For participating in the International Women’s Day Quiz",
         148,
@@ -77,7 +84,6 @@ export default function ResultPage() {
         { align: "center" }
       );
 
-      pdf.setFontSize(14);
       pdf.text(
         `Score: ${score}/10   |   Time: ${timeTaken}s`,
         148,
@@ -89,29 +95,23 @@ export default function ResultPage() {
         pdf.text(`Rank: #${rank}`, 148, 158, { align: "center" });
       }
 
-      pdf.setFontSize(13);
-      pdf.text("National Service Scheme (NSS)", 148, 175, {
-        align: "center",
-      });
-      pdf.text("BIT Mesra • Team Samarpan", 148, 185, {
-        align: "center",
-      });
+      pdf.text("National Service Scheme (NSS)", 148, 175, { align: "center" });
+      pdf.text("BIT Mesra • Team Samarpan", 148, 185, { align: "center" });
 
       pdf.save("NSS_Womens_Day_Certificate.pdf");
     };
   };
+
+  // ⛔ Prevent SSR render
+  if (!mounted) return null;
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#0f0617] text-white px-4">
       <div className="bg-white/10 p-8 rounded-3xl max-w-md w-full text-center backdrop-blur-xl border border-white/20">
         <h1 className="text-3xl font-bold mb-4">🎉 Quiz Completed!</h1>
 
-        <p className="text-lg">
-          Score: <b>{score}/10</b>
-        </p>
-        <p className="text-lg">
-          Time: <b>{timeTaken}s</b>
-        </p>
+        <p className="text-lg">Score: <b>{score}/10</b></p>
+        <p className="text-lg">Time: <b>{timeTaken}s</b></p>
 
         {rank && (
           <p className="text-xl mt-2">
