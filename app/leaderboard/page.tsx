@@ -21,7 +21,6 @@ export default function LeaderboardPage() {
     const q = query(
       collection(db, "participants"),
       orderBy("score", "desc"),
-      orderBy("timeTaken", "asc")
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
